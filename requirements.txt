@@ -5,3 +5,7 @@ yfinance
 pandas-datareader
 prophet
 seaborn
+numpy
+pipreqsnb
+scikit_learn
+matplotlib
