@@ -78,18 +78,24 @@ st.pyplot(plt)
 
 # RFM Analysis
 st.header("RFM Segmentation")
+# Calculate the maximum date in the hour_df for recency calculation
+max_date = hour_df['dteday'].max()
+
+# Group by registered users and calculate RFM metrics
 df_rfm = hour_df.groupby('registered').agg({
-    'dteday': lambda x: (hour_df['dteday'].max() - x.max()).days,
-    'registered': 'count',
-    'cnt': 'sum'
+    'dteday': lambda x: (max_date - x.max()).days,  # Recency
+    'registered': 'count',  # Frequency
+    'cnt': 'sum'  # Monetary: total bike rentals by registered users
 }).rename(columns={
     'dteday': 'recency',
     'registered': 'frequency',
     'cnt': 'monetary'
 })
 
+# Calculate quantiles for scoring
 quantiles = df_rfm.quantile(q=[0.25, 0.5, 0.75])
 
+# Scoring functions
 def r_score(x, p, d):
     if x <= d[p][0.25]:
         return 4
@@ -110,13 +116,18 @@ def fm_score(x, p, d):
     else:
         return 4
 
+# Rename the columns to match RFM terminology
 df_rfm.columns = ['recency', 'frequency', 'monetary']
 rfm_segmentation = df_rfm.copy()
+
+# Apply RFM scoring
 rfm_segmentation['R'] = rfm_segmentation['recency'].apply(r_score, args=('recency', quantiles))
 rfm_segmentation['F'] = rfm_segmentation['frequency'].apply(fm_score, args=('frequency', quantiles))
 rfm_segmentation['M'] = rfm_segmentation['monetary'].apply(fm_score, args=('monetary', quantiles))
 
+# Combine R, F, and M scores into a single RFM Score
 rfm_segmentation['RFM Score'] = rfm_segmentation['R'].map(str) + rfm_segmentation['F'].map(str) + rfm_segmentation['M'].map(str)
 
+# Display RFM Segmentation
 st.write(rfm_segmentation)
 
